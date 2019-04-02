@@ -51,12 +51,12 @@
         "esri/geometry/webMercatorUtils",
         "esri/dijit/BasemapToggle",
         
-        "esri/renderers/SimpleRenderer",
-        "esri/symbols/SimpleFillSymbol",
-        "esri/tasks/query",
-        
         "esri/layers/FeatureLayer",
         "dijit/registry",
+        "esri/tasks/query",
+        "esri/renderers/SimpleRenderer",
+        "esri/symbols/SimpleFillSymbol",
+        
         "dojo/domReady!",
         "dijit/layout/BorderContainer",
         "dijit/layout/ContentPane",
@@ -95,7 +95,7 @@
         var accidents = new FeatureLayer("https://services1.arcgis.com/56dETZIzFXStwLka/arcgis/rest/services/Traffic_Accidents_102100/FeatureServer/0");
         var wards = new FeatureLayer("https://services1.arcgis.com/56dETZIzFXStwLka/arcgis/rest/services/Wards_2016/FeatureServer/0");
         var outline = new FeatureLayer("https://services1.arcgis.com/56dETZIzFXStwLka/arcgis/rest/services/City_Boundary/FeatureServer/0");
-        map.addLayer(accidents);
+        map.addLayers([accidents, outline]);
         
         esri.config.defaults.io.proxyUrl = "/proxy/";
         esri.config.defaults.io.alwaysUseProxy = false;
@@ -243,8 +243,8 @@
              </div>
           </div> <br>
        
-          <div style="padding-left:2%;border: 1px solid black;>
-             <div style="font-size:100px">
+          <div style="padding-left:2%;border: 1px solid black;">
+             <div>
                 <h6> About: </h6>
                 Developer: <a href="https://vaasudevans.github.io/" target="_blank">Vaasudevan Srinivasan</a><br>
                 Department: <a href="https://www.unb.ca/fredericton/engineering/depts/gge/index.html" target="_blank">MEngg. Geodesy and Geomatics</a><br>
