@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1,user-scalable=no">
+    <title> Fredericton - Road Safety </title>
+
+    <link rel="stylesheet" href="https://js.arcgis.com/3.28/dijit/themes/claro/claro.css">
+    <link rel="stylesheet" href="https://js.arcgis.com/3.28/esri/css/esri.css">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <link rel="icon" href="https://www.van-tramp.com/wp/wp-content/uploads/2013/01/Safety-Icon.jpg">
+    
+    <style>
+    
+    #HomeButton {
+      top: 95px;
+      left: 20px;
+      z-index: 50;
+    }
+    
+    #BasemapToggle {
+      position: absolute;
+      top: 13%;
+      right: 20px;
+      z-index: 50;
+    }
+
+    </style>
+    
+    <script src="https://js.arcgis.com/3.28/"> </script>
+    <script src="https://code.jquery.com/jquery-3.3.1.js"> </script>
+    <script>
+      require([
+        "esri/urlUtils",
+        "esri/map",
+        "esri/graphic",
+        "esri/tasks/RouteTask",
+        "esri/tasks/RouteParameters",
+
+        "esri/tasks/FeatureSet",
+        "esri/symbols/SimpleMarkerSymbol",
+        "esri/symbols/SimpleLineSymbol",
+
+        "esri/Color",
+        "dojo/on",
+        // "esri/dijit/HomeButton",
+        "dojo/dom",
+        "esri/tasks/locator",
+        "esri/geometry/webMercatorUtils",
+        "esri/dijit/BasemapToggle",
+        "esri/layers/FeatureLayer",
+        "dijit/registry",
+        "dojo/domReady!",
+        
+        "dijit/layout/BorderContainer",
+        "dijit/layout/ContentPane",
+        "dijit/form/HorizontalSlider",
+        "dijit/form/HorizontalRuleLabels",
+      ], function (
+        urlUtils, Map, Graphic, RouteTask, RouteParameters,
+        FeatureSet, SimpleMarkerSymbol, SimpleLineSymbol,
+        //HomeButton, 
+        Color, on, dom, Locator, webMercatorUtils, BasemapToggle, FeatureLayer,
+        registry
+      ) {
+        var map, locator, routeTask, routeParams, home;
+        var stopSymbol, routeSymbol, lastStop;
+        routes = [];
+        var stops = 1;
+        stopLocs = [];
+
+        urlUtils.addProxyRule({
+          urlPrefix: "route.arcgis.com",  
+          proxyUrl: "/sproxy/"
+        });
+        
+        map = new Map("map", {
+            basemap : "satellite",
+            center : [-66.640, 45.968],
+            zoom : 14
+        });
+        
+        var toggle = new BasemapToggle({
+            map: map,
+            basemap: "streets"
+         }, "BasemapToggle");
+        toggle.startup();
+        
+        var accidents = new FeatureLayer("https://services1.arcgis.com/56dETZIzFXStwLka/arcgis/rest/services/Traffic_Accidents_102100/FeatureServer/0");
+        var wards = new FeatureLayer("https://services1.arcgis.com/56dETZIzFXStwLka/arcgis/rest/services/Wards_2016/FeatureServer/0");
+        
+        // map.addLayer(wards);
+        map.addLayer(accidents);
+
+        // var home = new HomeButton({
+        //    map: map
+        //  }, "HomeButton");
+        
+        map.on("click", addStop);
+        on(dom.byId("clearAll"), "click", clearAll);
+
+        routeTask = new RouteTask("https://utility.arcgis.com/usrsvcs/appservices/UrSqiPqnCnAKPZTb/rest/services/World/Route/NAServer/Route_World");
+        locator = new Locator("https://utility.arcgis.com/usrsvcs/appservices/Ooyp9uhT7sTs88uJ/rest/services/World/GeocodeServer/reverseGeocode");
+        
+        //setup the route parameters
+        routeParams = new RouteParameters();
+        routeParams.stops = new FeatureSet();
+        routeParams.returnDirections = true;
+        routeParams.returnStops = true;
+        routeParams.outSpatialReference = { "wkid" : 102100 };
+
+        routeTask.on("solve-complete", showRoute);
+
+        // Define the symbology used to display the route
+        stopSymbol = new SimpleMarkerSymbol().setStyle(SimpleMarkerSymbol.STYLE_CROSS).setSize(15);
+        stopSymbol.outline.setWidth(4);
+        routeSymbol = new SimpleLineSymbol().setColor(new dojo.Color([0, 0, 255, 0.5])).setWidth(5);
+
+        //Adds a graphic when the user clicks the map. If 2 or more points exist, route is solved.
+        function addStop(evt) {
+          var stop = map.graphics.add(new Graphic(evt.mapPoint, stopSymbol));
+          routeParams.stops.features.push(stop);
+          locator.locationToAddress(webMercatorUtils.webMercatorToGeographic(evt.mapPoint), 100);
+          locator.on("location-to-address-complete", function(evt) {
+               name = evt.address.address.Address;
+               loc = evt.address.location.x + "," + evt.address.location.y;
+               if (name == ''){
+                  name = "Geocoding error";
+               }
+               if (!stopLocs.includes(loc)){
+                  $("#stops").append("Location" + stops + ": " + name + "<br>");
+                  stops += 1;
+                  stopLocs.push(loc);
+               }
+          });
+          if (routeParams.stops.features.length >= 2) {
+            routeTask.solve(routeParams);
+            // lastStop = routeParams.stops.features.splice(0, 1)[0];
+          }
+        }
+        
+        // Adds the solved route to the map as a graphic
+        function showRoute(evt) {
+          dirs = evt.result.routeResults[0].directions.features;
+          $('#directions').html("<b>Directions:</b><br>")
+          for (var i=0; i<dirs.length; i++){
+             $('#directions').append((i+1) + ".) " + dirs[i].attributes.text + "<br>")
+          }
+          $("#info").html(
+             "Length: " + evt.result.routeResults[0].route.attributes.Total_Kilometers.toFixed(3) +
+             " kms<br>Travel time: " + evt.result.routeResults[0].route.attributes.Total_TravelTime.toFixed(3) +
+             " mins"
+          )
+          routes.push( map.graphics.add(evt.result.routeResults[0].route.setSymbol(routeSymbol)));
+          // console.log(evt.result.routeResults[0].route.geometry.paths[0])
+        }
+        
+        // Clears the Stops and Routes
+        function clearAll(){
+          map.graphics.clear();
+          /* 
+          for(var i=0; i<routes.length; i++){
+             map.graphics.remove(routes[i]);
+          }
+          for (var i=0; i<routeParams.stops.features.length; i++) {
+            map.graphics.remove(routeParams.stops.features[i]);
+         } */
+          stops = 1;
+          routes = [];
+          stopLocs = [];
+          routeParams.stops.features = [];
+          $("#stops").html("<b>Stops:</b><br>");
+          $("#info").html("<b>Info:</b>");
+          $("#directions").html("<b>Directions:</b>");
+        }
+        
+       });
+    </script>
+
+  </head>
+  <body class="claro">
+     <div class="header">
+        <img src="http://www2.unb.ca/~voyer/assets/images/logolg.jpg" style="width:10%">
+        <img src="http://www2.unb.ca/gge/Graphics/GGE_Crest.gif" style="float:right; width:5.8%; padding-right:1%">
+        <center> <h1 style="padding-left:12%; margin-top:-4%"> Fredericton: understanding Route safety </h1> </center>
+     </div> <br>
+     <div class="main-body">
+        
+        <div class="left" style="float:left; width:20%; margin-left:0.5%;">
+          <div style="padding-left:2%; padding-top:2%; height:69.1vh; border: 1px solid black; overflow-y: scroll">
+             <button id="clearAll"> clear all </button> <br><br>
+             <div id="stops">
+                <b>Stops:</b><br>
+             </div> <br>
+             
+             <div id="info">
+                <b>Info:</b> 
+             </div> <br>
+             
+             <div id="directions">
+                <b>Directions:</b>
+             </div>
+          </div> <br>
+       
+          <div style="padding-left:2%;border: 1px solid black;>
+             <div style="font-size:100px">
+                <h6> About: </h6>
+                Developer: <a href="https://vaasudevans.github.io/" target="_blank">Vaasudevan Srinivasan</a><br>
+                Department: <a href="https://www.unb.ca/fredericton/engineering/depts/gge/index.html" target="_blank">MEngg. Geodesy and Geomatics</a><br>
+                Using: <a href="https://developers.arcgis.com/javascript/3/" target="_blank">ESRI JS API 3.28</a> from April 1 to 3, 2019 <br><br>
+                
+                <h6> Layers from <a href="http://www.fredericton.ca/en/smart-city/open-data" target="_blank">Fredericton Open Data</a> </h6>
+                * <a href="http://data-fredericton.opendata.arcgis.com/datasets/traffic-accidents-accidents-de-la-circulation" target="_blank">
+                   Accidents (2007-2018)</a>
+                * <a href="http://data-fredericton.opendata.arcgis.com/datasets/crime-by-neighbourhood-2017-crime-par-quartier-2017?page=20" target="_blank">
+                   Crime (2017)</a>
+                * <a href="http://data-fredericton.opendata.arcgis.com/datasets/wards-2016-quartiers-2016?geometry=-67.32%2C45.862%2C-66.014%2C46.029" target="_blank">
+                   Wards</a> <br>
+             </div>
+          </div>
+        </div>
+        
+        <div class="right" style="float:left; padding-left:10px; width:79%">
+          <div id="map" style="height:90vh; border:1px solid #000;">
+             <div id="HomeButton"></div>
+             <div id="BasemapToggle"></div>
+
+          </div>
+        </div>
+     </div>
+
+  </body>
+</html>
