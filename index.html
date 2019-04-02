@@ -95,7 +95,7 @@
         var accidents = new FeatureLayer("https://services1.arcgis.com/56dETZIzFXStwLka/arcgis/rest/services/Traffic_Accidents_102100/FeatureServer/0");
         var wards = new FeatureLayer("https://services1.arcgis.com/56dETZIzFXStwLka/arcgis/rest/services/Wards_2016/FeatureServer/0");
         var outline = new FeatureLayer("https://services1.arcgis.com/56dETZIzFXStwLka/arcgis/rest/services/City_Boundary/FeatureServer/0");
-        map.addLayers([accidents, outline]);
+        map.addLayers([outline]);
         
         esri.config.defaults.io.proxyUrl = "/proxy/";
         esri.config.defaults.io.alwaysUseProxy = false;
@@ -151,6 +151,7 @@
 
         // Adds the solved route to the map as a graphic and do the processing too
         function showRoute(evt) {
+          map.graphics.clear();
           dirs = evt.result.routeResults[0].directions.features;
           $('#directions').html("<b>Directions:</b><br>")
           for (var i=0; i<dirs.length; i++){
@@ -161,12 +162,12 @@
              " kms<br>Travel time: " + evt.result.routeResults[0].route.attributes.Total_TravelTime.toFixed(3) +
              " mins"
           )
-          routes.push( map.graphics.add(evt.result.routeResults[0].route.setSymbol(routeSymbol)) );
+          routes.push( map.graphics.add(evt.result.routeResults[0].route.setInfoTemplate(esri.InfoTemplate("Route", "No. of stops: ${StopCount}")).setSymbol(routeSymbol)) );
           // console.log(evt.result.routeResults[0].route.geometry.paths[0])
           
           var params = new esri.tasks.BufferParameters();
           params.geometries = [ evt.result.routeResults[0].route.geometry ];
-          params.distances = [17];
+          params.distances = [20];
           params.unit = esri.tasks.GeometryService.UNIT_METER;
           params.outSpatialReference = map.spatialReference;
           gsvc.buffer(params, showBuffer);
@@ -182,19 +183,40 @@
            dojo.forEach(bufferedGeometries, function(geometry) {
               var graphic = new esri.Graphic(geometry,symbol);
               map.graphics.add(graphic);
-
               var query = new Query();
               query.geometry = geometry;
               query.returnGeometry = true;
               query.spatialRelationship = esri.tasks.Query.SPATIAL_REL_CONTAINS;
               query.outFields = ["*"];
               queryTask.execute(query, showAccidents);
-                function showAccidents(response){
-                   console.log(response);
+              function showAccidents(results){
+                   dojo.forEach(results.features, function(f) {
+                      info = new esri.InfoTemplate("Severity Level: ${Severity}", 
+                                                   "Took place on: ${Year_}/${Month_}/${Day_} <br />"+
+                                                   "Type: ${Type}<br />" + 
+                                                   "Injured: ${NoInjured}<br />"+
+                                                   "Killed: ${NoKilled}<br />"+
+                                                   "Day or Night: ${Day_Night}"
+                                                );
+                      switch(f.attributes.Severity) {
+                       case 1: highlightSymbol= new esri.symbol.SimpleMarkerSymbol().setColor(new dojo.Color([0,255,0])).setSize(5); break; //green
+                       case 2: highlightSymbol= new esri.symbol.SimpleMarkerSymbol().setColor(new dojo.Color([0,0,255])).setSize(5); break; //blue
+                       case 3: highlightSymbol= new esri.symbol.SimpleMarkerSymbol().setColor(new dojo.Color([255,0,0])).setSize(5); break; //red
+                    }
+                    f.setInfoTemplate(info);
+                    dojo.connect(map.graphics, "onMouseMove", function(evt) {
+                         var g = evt.graphic;
+                         map.infoWindow.setContent(g.getContent());
+                         map.infoWindow.setTitle(g.getTitle());
+                         map.infoWindow.show(evt.screenPoint,map.getInfoWindowAnchor(evt.screenPoint));
+                       });
+                    dojo.connect( map.graphics, "onMouseOut", function() {map.infoWindow.hide();} );
+                    map.graphics.add(f.setSymbol(highlightSymbol));
+                   });
                 }
-            });
+              });
+            }
           }
-        }
         
         // Clears the Stops and Routes
         function clearAll(){
