@@ -50,6 +50,9 @@
         "esri/tasks/locator",
         "esri/geometry/webMercatorUtils",
         "esri/dijit/BasemapToggle",
+        
+        "esri/renderers/SimpleRenderer",
+        "esri/symbols/SimpleFillSymbol",
         "esri/tasks/query",
         
         "esri/layers/FeatureLayer",
@@ -93,14 +96,12 @@
         var wards = new FeatureLayer("https://services1.arcgis.com/56dETZIzFXStwLka/arcgis/rest/services/Wards_2016/FeatureServer/0");
         var outline = new FeatureLayer("https://services1.arcgis.com/56dETZIzFXStwLka/arcgis/rest/services/City_Boundary/FeatureServer/0");
         map.addLayer(accidents);
-        map.addLayer(wards);
-        map.addLayer(outline);
         
         esri.config.defaults.io.proxyUrl = "/proxy/";
         esri.config.defaults.io.alwaysUseProxy = false;
         gsvc = new esri.tasks.GeometryService("https://utility.arcgisonline.com/ArcGIS/rest/services/Geometry/GeometryServer")
         var queryTask = new esri.tasks.QueryTask("https://services1.arcgis.com/56dETZIzFXStwLka/arcgis/rest/services/Traffic_Accidents_102100/FeatureServer/0")
-
+        
         // var home = new HomeButton({
         //    map: map
         //  }, "HomeButton");
@@ -147,7 +148,7 @@
             // lastStop = routeParams.stops.features.splice(0, 1)[0];
           }
         }
-        
+
         // Adds the solved route to the map as a graphic and do the processing too
         function showRoute(evt) {
           dirs = evt.result.routeResults[0].directions.features;
@@ -194,7 +195,7 @@
             });
           }
         }
-
+        
         // Clears the Stops and Routes
         function clearAll(){
           map.graphics.clear();
