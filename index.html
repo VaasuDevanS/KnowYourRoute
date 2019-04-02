@@ -2,7 +2,6 @@
 <html>
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    
     <meta name="viewport" content="initial-scale=1, maximum-scale=1,user-scalable=no">
     <title> Fredericton - Road Safety </title>
 
@@ -31,6 +30,8 @@
     <script src="https://js.arcgis.com/3.28/"> </script>
     <script src="https://code.jquery.com/jquery-3.3.1.js"> </script>
     <script>
+      dojo.require("esri.tasks.geometry");
+      dojo.require("esri/geometry/Polyline");
       require([
         "esri/urlUtils",
         "esri/map",
@@ -49,10 +50,11 @@
         "esri/tasks/locator",
         "esri/geometry/webMercatorUtils",
         "esri/dijit/BasemapToggle",
+        "esri/tasks/query",
+        
         "esri/layers/FeatureLayer",
         "dijit/registry",
         "dojo/domReady!",
-        
         "dijit/layout/BorderContainer",
         "dijit/layout/ContentPane",
         "dijit/form/HorizontalSlider",
@@ -60,9 +62,9 @@
       ], function (
         urlUtils, Map, Graphic, RouteTask, RouteParameters,
         FeatureSet, SimpleMarkerSymbol, SimpleLineSymbol,
-        //HomeButton, 
+        //HomeButton
         Color, on, dom, Locator, webMercatorUtils, BasemapToggle, FeatureLayer,
-        registry
+        registry, Query
       ) {
         var map, locator, routeTask, routeParams, home;
         var stopSymbol, routeSymbol, lastStop;
@@ -71,9 +73,9 @@
         stopLocs = [];
 
         urlUtils.addProxyRule({
-          urlPrefix: "route.arcgis.com",  
+          urlPrefix: "route.arcgis.com",
           proxyUrl: "/sproxy/"
-        });
+       });
         
         map = new Map("map", {
             basemap : "satellite",
@@ -89,9 +91,15 @@
         
         var accidents = new FeatureLayer("https://services1.arcgis.com/56dETZIzFXStwLka/arcgis/rest/services/Traffic_Accidents_102100/FeatureServer/0");
         var wards = new FeatureLayer("https://services1.arcgis.com/56dETZIzFXStwLka/arcgis/rest/services/Wards_2016/FeatureServer/0");
-        
-        // map.addLayer(wards);
+        var outline = new FeatureLayer("https://services1.arcgis.com/56dETZIzFXStwLka/arcgis/rest/services/City_Boundary/FeatureServer/0");
         map.addLayer(accidents);
+        map.addLayer(wards);
+        map.addLayer(outline);
+        
+        esri.config.defaults.io.proxyUrl = "/proxy/";
+        esri.config.defaults.io.alwaysUseProxy = false;
+        gsvc = new esri.tasks.GeometryService("https://utility.arcgisonline.com/ArcGIS/rest/services/Geometry/GeometryServer")
+        var queryTask = new esri.tasks.QueryTask("https://services1.arcgis.com/56dETZIzFXStwLka/arcgis/rest/services/Traffic_Accidents_102100/FeatureServer/0")
 
         // var home = new HomeButton({
         //    map: map
@@ -112,7 +120,7 @@
 
         routeTask.on("solve-complete", showRoute);
 
-        // Define the symbology used to display the route
+        // Define the symbology used to display the route and stops
         stopSymbol = new SimpleMarkerSymbol().setStyle(SimpleMarkerSymbol.STYLE_CROSS).setSize(15);
         stopSymbol.outline.setWidth(4);
         routeSymbol = new SimpleLineSymbol().setColor(new dojo.Color([0, 0, 255, 0.5])).setWidth(5);
@@ -140,7 +148,7 @@
           }
         }
         
-        // Adds the solved route to the map as a graphic
+        // Adds the solved route to the map as a graphic and do the processing too
         function showRoute(evt) {
           dirs = evt.result.routeResults[0].directions.features;
           $('#directions').html("<b>Directions:</b><br>")
@@ -152,10 +160,41 @@
              " kms<br>Travel time: " + evt.result.routeResults[0].route.attributes.Total_TravelTime.toFixed(3) +
              " mins"
           )
-          routes.push( map.graphics.add(evt.result.routeResults[0].route.setSymbol(routeSymbol)));
+          routes.push( map.graphics.add(evt.result.routeResults[0].route.setSymbol(routeSymbol)) );
           // console.log(evt.result.routeResults[0].route.geometry.paths[0])
+          
+          var params = new esri.tasks.BufferParameters();
+          params.geometries = [ evt.result.routeResults[0].route.geometry ];
+          params.distances = [17];
+          params.unit = esri.tasks.GeometryService.UNIT_METER;
+          params.outSpatialReference = map.spatialReference;
+          gsvc.buffer(params, showBuffer);
+          function showBuffer(bufferedGeometries) {
+          var symbol = new esri.symbol.SimpleFillSymbol(
+               esri.symbol.SimpleFillSymbol.STYLE_SOLID,
+               new SimpleLineSymbol(
+                 SimpleLineSymbol.STYLE_SOLID,
+                 new Color([255,0,0,0.65]), 2
+               ),
+               new Color([255,0,0,0.35])
+             );
+           dojo.forEach(bufferedGeometries, function(geometry) {
+              var graphic = new esri.Graphic(geometry,symbol);
+              map.graphics.add(graphic);
+
+              var query = new Query();
+              query.geometry = geometry;
+              query.returnGeometry = true;
+              query.spatialRelationship = esri.tasks.Query.SPATIAL_REL_CONTAINS;
+              query.outFields = ["*"];
+              queryTask.execute(query, showAccidents);
+                function showAccidents(response){
+                   console.log(response);
+                }
+            });
+          }
         }
-        
+
         // Clears the Stops and Routes
         function clearAll(){
           map.graphics.clear();
