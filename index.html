@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="initial-scale=1, maximum-scale=1,user-scalable=no">
+  <title> Know Your Route </title>
+
+  <link rel="stylesheet" href="https://js.arcgis.com/3.28/dijit/themes/claro/claro.css">
+  <link rel="stylesheet" href="https://js.arcgis.com/3.28/dijit/themes/nihilo/nihilo.css">
+  <link rel="stylesheet" href="https://js.arcgis.com/3.28/esri/css/esri.css">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/chartist.js/latest/chartist.min.css">
+  <link rel="icon" href="https://www.van-tramp.com/wp/wp-content/uploads/2013/01/Safety-Icon.jpg">
+  <link rel="stylesheet" href="css/RouteSafety.css">
+
+  <script>var dojoConfig = { parseOnLoad: true };</script>
+  <script src="https://cdn.jsdelivr.net/chartist.js/latest/chartist.min.js"> </script>
+  <script src="https://js.arcgis.com/3.28/"> </script>
+  <script src="https://code.jquery.com/jquery-3.3.1.js"> </script>
+  <script src="js/RouteSafety.js"> </script>
+</head>
+
+<body class="nihilo">
+  <div id="mainWindow" data-dojo-type="dijit.layout.BorderContainer" data-dojo-props="design:'headline', gutters:false"
+    style="width:100%; height:100%;">
+    <div id="header" data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'top'">
+        <img src="http://www2.unb.ca/~voyer/assets/images/logolg.jpg" style="width: 10%;height: 100%;float: left;">
+        <img src="http://www2.unb.ca/gge/Graphics/GGE_Crest.gif" style="float:right; width:4%;height: 100%; padding-right:1%">
+        <center> Fredericton: Know Your Route </center>
+      <!-- <div id="subheader"><center>Be safe while you travel</center></div> -->
+    </div>
+    <div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'left'" id="leftPane">
+      <div data-dojo-type="dijit.layout.AccordionContainer">
+        <div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="title:'Know Your Route Safety'">
+            <center><button id="clearAll" style="padding:2px 2px 2px 2px;" class="btn btn-outline-danger"> Clear Results </button></center> <br><br>
+          <div id="stops">
+            <b>Stops:</b><br>
+          </div> <br>
+
+          <div id="info">
+            <b>Info:</b>
+          </div> <br>
+
+          <div id="directions">
+            <b>Directions:</b>
+          </div>
+        </div>
+        <div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="title:'Statistics for whole city'">
+            <center><div id="statisticInfo">
+               STATISTICS
+            </div></center>
+          </div>
+        <div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="title:'Basemap Gallery'">
+          <div id="basemapGallery"></div>
+        </div>
+        <div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="title:'How to Use?'">
+            <center><div id="usageInstruction">
+                ****
+            </div></center>
+          </div>
+        <div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="title:'About'">
+          <!-- <h6> About: </h6> -->
+          <b>Developer: </b><a href="https://vaasudevans.github.io/" target="_blank">Vaasudevan Srinivasan</a><br>
+          <b>Department:</b> <a href="https://www.unb.ca/fredericton/engineering/depts/gge/index.html"
+            target="_blank">MEngg. GGE</a><br>
+          <b>Using: </b><a href="https://developers.arcgis.com/javascript/3/" target="_blank">ESRI JS 3.28</a> from
+          April 1 to 3, 2019 <br><br>
+
+          <h6><b> Layers from </b><a href="http://www.fredericton.ca/en/smart-city/open-data"
+              target="_blank">Fredericton Open Data</a> </h6>
+            * <a
+              href="http://data-fredericton.opendata.arcgis.com/datasets/traffic-accidents-accidents-de-la-circulation"
+              target="_blank">
+              Accidents (2007-2018)</a><br>
+            * <a
+              href="http://data-fredericton.opendata.arcgis.com/datasets/crime-by-neighbourhood-2017-crime-par-quartier-2017?page=20"
+              target="_blank">
+              Crime (2017)</a>
+        </div>
+      </div>
+    </div>
+    <div id="map" class="shadow" data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'center'">
+      <span id="Coord_info" style="position:absolute; left:15px; bottom:5px; color:#000; z-index:50;background: rgba(255,255,255,0.7);"></span>
+      <div id="HomeButton"></div>
+      <!-- <div id="NavButton"> -->
+          <button id="NavButton" title="Downtown area">
+              <img id="downAreaImg" src="images/extent.png"
+                style="height: 30px; width:30px; background-color: transparent;">
+            </button>
+      <!-- </div> -->
+      
+    </div>
+    <div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'right'" id="rightPane">
+        <div id="statsDiv" style="display:block">
+           <center><h6>Add points on map to view statistics</h6></center>
+        </div>
+      <div id="statsResultDiv"  style="display:none">
+        <div id="statistics"> <b> Statistics: </b> </div> <br>
+        <b> Accidents by Year <br>
+          <div id="accidents">
+            <div class="ct-chart1 ct-golden-section"> </div> <br>
+          </div>
+          Time took place <br>
+          <div id="daynight">
+            <div class="ct-chart2 ct-golden-section"></div> <br>
+          </div>
+          Day took place <br>
+          <div id="day">
+            <div class="ct-chart3 ct-golden-section"></div> <br>
+          </div>
+          Reason
+        </b> <br>
+        <div id="reason"> </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
