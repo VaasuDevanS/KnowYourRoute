@@ -4,11 +4,14 @@
 * @author VaasuDevan Srinivasan, University Of New Brunswick
 * @date: 01/03/19
 */
+
 dojo.require("esri.tasks.geometry");
 require([
   "esri/urlUtils",
   "esri/map",
   "esri/graphic",
+  "esri/geometry/Point",
+  "esri/SpatialReference",
   "esri/tasks/RouteTask",
   "esri/tasks/RouteParameters",
   "esri/tasks/FeatureSet",
@@ -38,6 +41,8 @@ require([
    urlUtils,
    Map, 
    Graphic, 
+   Point,
+   SpatialReference,
    RouteTask, 
    RouteParameters, 
    FeatureSet, 
@@ -61,6 +66,33 @@ require([
     routes = [];
     var stops = 1;
     stopLocs = [];
+    
+    new Chartist.Bar('.ct-chart4', {
+      labels: [2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017],
+      series: [893, 967, 971, 776, 869, 806, 850, 815, 878, 897, 578]
+    }, {
+       distributeSeries: true,
+       axisY: { offset: 30 },
+       axisX: { offset: 70 },
+      });
+    
+    new Chartist.Pie('.ct-chart5', {
+      series: [7206, 2094],
+      labels: ["Day- 7206", "Night- 2094"]
+    }, {
+       donut: true,
+       donutWidth: 20,
+       donutSolid: true,
+       showLabel: true
+      });
+    
+    new Chartist.Bar('.ct-chart6', {
+      labels: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+      series: [[823, 1244, 1409, 1414, 1538, 1703, 1165]]
+    }, {
+       axisX: { position: 'start', offset: 10 },
+       axisY: { position: 'end', offset: 35 }
+      });
 
     urlUtils.addProxyRule({
       urlPrefix: "route.arcgis.com",
@@ -106,7 +138,8 @@ require([
     }
 
     $('#NavButton').on('click', function(){
-        alert("Tried to move to downtown area");
+      var downtown = new Point(-66.647, 45.960, new SpatialReference({ wkid: 4326 }));
+      map.centerAndZoom(downtown, 16);
     });
 
     map.on("click", addStop);

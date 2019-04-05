@@ -14,7 +14,7 @@
   <link rel="icon" href="https://www.van-tramp.com/wp/wp-content/uploads/2013/01/Safety-Icon.jpg">
   <link rel="stylesheet" href="css/RouteSafety.css">
 
-  <script>var dojoConfig = { parseOnLoad: true };</script>
+  <script> var dojoConfig = { parseOnLoad: true }; </script>
   <script src="https://cdn.jsdelivr.net/chartist.js/latest/chartist.min.js"> </script>
   <script src="https://js.arcgis.com/3.28/"> </script>
   <script src="https://code.jquery.com/jquery-3.3.1.js"> </script>
@@ -33,7 +33,7 @@
     <div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'left'" id="leftPane">
       <div data-dojo-type="dijit.layout.AccordionContainer">
         <div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="title:'Know Your Route Safety'">
-            <center><button id="clearAll" style="padding:2px 2px 2px 2px;" class="btn btn-outline-danger"> Clear Results </button></center> <br><br>
+            <center><button id="clearAll" style="padding:2px 2px 2px 2px;" class="btn btn-outline-danger"> Clear Results </button></center> <br>
           <div id="stops">
             <b>Stops:</b><br>
           </div> <br>
@@ -46,9 +46,15 @@
             <b>Directions:</b>
           </div>
         </div>
-        <div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="title:'Statistics for whole city'">
+        <div style="width:95%" data-dojo-type="dijit.layout.ContentPane" data-dojo-props="title:'Statistics for Fredericton'">
             <center><div id="statisticInfo">
-               STATISTICS
+               <b>No. of Accidents:</b> 9300 <br>
+               <b> Accidents by Year <br>
+                   <div class="ct-chart4 ct-golden-section"> </div>
+                 Time took place <br>
+                   <div style="width:70%;"> <div class="ct-chart5 ct-golden-section"></div> </div> <br>
+                 Day took place <br>
+                  <div class="ct-chart6 ct-golden-section"></div>
             </div></center>
           </div>
         <div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="title:'Basemap Gallery'">
@@ -56,7 +62,11 @@
         </div>
         <div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="title:'How to Use?'">
             <center><div id="usageInstruction">
-                ****
+               <video width="300" height="240" controls>
+                   <source src="images/SampleVideo_1280x720_5mb.mp4" type="video/mp4">
+                   Your browser does not support the video tag.
+               </video>
+               <div style="text-align:left; padding-left:5px">Hello</div>
             </div></center>
           </div>
         <div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="title:'About'">
@@ -65,7 +75,7 @@
           <b>Department:</b> <a href="https://www.unb.ca/fredericton/engineering/depts/gge/index.html"
             target="_blank">MEngg. GGE</a><br>
           <b>Using: </b><a href="https://developers.arcgis.com/javascript/3/" target="_blank">ESRI JS 3.28</a> from
-          April 1 to 3, 2019 <br><br>
+          April 1 to 4, 2019 <br><br>
 
           <h6><b> Layers from </b><a href="http://www.fredericton.ca/en/smart-city/open-data"
               target="_blank">Fredericton Open Data</a> </h6>
@@ -73,10 +83,6 @@
               href="http://data-fredericton.opendata.arcgis.com/datasets/traffic-accidents-accidents-de-la-circulation"
               target="_blank">
               Accidents (2007-2018)</a><br>
-            * <a
-              href="http://data-fredericton.opendata.arcgis.com/datasets/crime-by-neighbourhood-2017-crime-par-quartier-2017?page=20"
-              target="_blank">
-              Crime (2017)</a>
         </div>
       </div>
     </div>
@@ -84,7 +90,7 @@
       <span id="Coord_info" style="position:absolute; left:15px; bottom:5px; color:#000; z-index:50;background: rgba(255,255,255,0.7);"></span>
       <div id="HomeButton"></div>
       <!-- <div id="NavButton"> -->
-          <button id="NavButton" title="Downtown area">
+          <button id="NavButton" title="Downtown">
               <img id="downAreaImg" src="images/extent.png"
                 style="height: 30px; width:30px; background-color: transparent;">
             </button>
