@@ -20,6 +20,7 @@ require([
   "esri/dijit/HomeButton",
   "esri/dijit/BasemapGallery",
   "esri/Color",
+  "esri/toolbars/draw",
   "dojo/on",
   "dojo/dom",
   "esri/tasks/locator",
@@ -51,6 +52,7 @@ require([
    HomeButton, 
    BasemapGallery, 
    Color, 
+   Draw,
    on, 
    dom, 
    Locator, 
@@ -62,7 +64,7 @@ require([
 ) {
 
     var map, home, locator, basemapGallery, routeTask, routeParams, home;
-    var stopSymbol, routeSymbol, lastStop;
+    var stopSymbol, routeSymbol, lastStop, tb;
     routes = [];
     var stops = 1;
     stopLocs = [];
@@ -130,6 +132,24 @@ require([
       map.on("mouse-move", showCoordinates);
       map.on("mouse-drag", showCoordinates);
     });
+
+    $('#chooseAOI').on('click', function(){
+      map.disableMapNavigation();
+      initToolbar();
+    });
+    
+    function initToolbar() {
+      tb = new Draw(map);
+      tb.activate("extent");
+      tb.on("draw-end", getExtent);
+    }
+
+    function getExtent(evt){
+        console.log(evt);
+        map.setExtent(evt.geometry);
+        tb.deactivate(); 
+        map.enableMapNavigation();
+    }
 
     function showCoordinates(evt) {
       //the map is in web mercator but display coordinates in geographic (lat, long)
