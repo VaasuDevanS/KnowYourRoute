@@ -1,6 +1,6 @@
 
 /**
-* Method to find the safer road in Fredericton - based on Accident data
+* Anslysis on the accidents for the generated route(s)
 * @author VaasuDevan Srinivasan, University Of New Brunswick
 * @date: 01/03/19
 */
@@ -158,6 +158,8 @@ require([
       initToolbar();
     });
 
+    routeResults = [];
+
     function initToolbar() {
       tb = new Draw(map);
       tb.activate("extent");
@@ -166,6 +168,7 @@ require([
 
     function getExtent(evt) {
         console.log(evt);
+        console.log(routeResults)
         map.setExtent(evt.geometry);
         tb.deactivate();
         map.enableMapNavigation();
@@ -329,25 +332,42 @@ require([
               sev[resFea[i].attributes.Severity] += 1;
             }
 
-            $("#statistics").html("<b>No. of Accidents:</b> " + results.features.length +
-              "<br><b>Severity-Levels</b> (high is deadly)<br>  1: " + sev[1] + "   |    2: " + sev[2] + "   |    3: " + sev[3]
-            );
             delete dayOfWeek[" "];
-            dayOfWeek["Thu"] = dayOfWeek["Thurs"];
-            delete dayOfWeek["Thurs"];
-
-            BarChart1('.ct-chart1', Object.keys(year), Object.values(year), 15, 27)
-            PieChart('.ct-chart2', Object.values(day_nig), ["Day- " + day_nig.D, "Night- " + day_nig.N])
-            BarChart2('.ct-chart3', Object.keys(dayOfWeek), [Object.values(dayOfWeek)], 10, 40)
-
-            $("#reason").html("");
-            for (k in acc_type) {
-              $("#reason").append(k + ": <b>" + acc_type[k] + "</b><br>")
+            dKeys = ["Sun", "Mon", "Tue", "Wed", "Thurs", "Fri", "Sat"];
+            dValues = []
+            for(var i in dKeys){
+                dValues.push(dayOfWeek[dKeys[i]])
             }
 
-          }
+            routeResults.length = 0;
+            routeResults.push([results.features.length, sev[1], sev[2], sev[3]]);
+            routeResults.push([Object.keys(year), Object.values(year)]);
+            routeResults.push([Object.values(day_nig), ["Day- " + day_nig.D, "Night- " + day_nig.N]])
+            routeResults.push([dKeys, [dValues]])
+            routeResults.push([acc_type])
+
+            showStatistics();
+            }
         });
       }
+    }
+
+    function showStatistics() {
+
+        R = routeResults;
+
+        $("#statistics").html("<b>No. of Accidents:</b> " + R[0][0] +
+          "<br><b>Severity-Levels</b> (high is deadly)<br>  1: " + R[0][1] + "   |    2: " + R[0][2] + "   |    3: " + R[0][3]
+        );
+
+        BarChart1('.ct-chart1', R[1][0], R[1][1], 15, 27)
+        PieChart('.ct-chart2', R[2][0], R[2][1])
+        BarChart2('.ct-chart3', R[3][0], R[3][1], 10, 40)
+
+        $("#reason").html("");
+        for (k in R[4][0]) {
+          $("#reason").append(k + ": <b>" + R[4][0][k] + "</b><br>")
+        }
     }
 
     function clearAll() {
@@ -357,6 +377,7 @@ require([
       stops = 1;
       routes = [];
       stopLocs = [];
+      routeResults.length = 0;
       routeParams.stops.features = [];
       $("#stops").html("<b>Stops:</b><br>");
       $("#info").html("<b>Info:</b>");
