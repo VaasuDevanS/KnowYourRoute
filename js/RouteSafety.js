@@ -40,26 +40,26 @@ require([
   "dijit/form/HorizontalRuleLabels"
 ], function (
    urlUtils,
-   Map, 
-   Graphic, 
+   Map,
+   Graphic,
    Point,
    SpatialReference,
-   RouteTask, 
-   RouteParameters, 
-   FeatureSet, 
-   SimpleMarkerSymbol, 
+   RouteTask,
+   RouteParameters,
+   FeatureSet,
+   SimpleMarkerSymbol,
    SimpleLineSymbol,
-   HomeButton, 
-   BasemapGallery, 
-   Color, 
+   HomeButton,
+   BasemapGallery,
+   Color,
    Draw,
-   on, 
-   dom, 
-   Locator, 
-   webMercatorUtils, 
-   BasemapToggle, 
-   FeatureLayer, 
-   registry, 
+   on,
+   dom,
+   Locator,
+   webMercatorUtils,
+   BasemapToggle,
+   FeatureLayer,
+   registry,
    Query
 ) {
 
@@ -68,33 +68,53 @@ require([
     routes = [];
     var stops = 1;
     stopLocs = [];
-    
-    new Chartist.Bar('.ct-chart4', {
-      labels: [2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017],
-      series: [893, 967, 971, 776, 869, 806, 850, 815, 878, 897, 578]
-    }, {
-       distributeSeries: true,
-       axisY: { offset: 30 },
-       axisX: { offset: 70 },
-      });
-    
-    new Chartist.Pie('.ct-chart5', {
-      series: [7206, 2094],
-      labels: ["Day- 7206", "Night- 2094"]
-    }, {
-       donut: true,
-       donutWidth: 20,
-       donutSolid: true,
-       showLabel: true
-      });
-    
-    new Chartist.Bar('.ct-chart6', {
-      labels: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
-      series: [[823, 1244, 1409, 1414, 1538, 1703, 1165]]
-    }, {
-       axisX: { position: 'start', offset: 10 },
-       axisY: { position: 'end', offset: 35 }
-      });
+
+    function BarChart1(divId, lbl, srs, axY, axX){
+        new Chartist.Bar(divId, {
+          labels: lbl,
+          series: srs
+        }, {
+           distributeSeries: true,
+           axisY: { offset: axY },
+           axisX: { offset: axX }
+          });
+    }
+
+    function PieChart(divId, srs, lbl) {
+        new Chartist.Pie(divId, {
+          series: srs,
+          labels: lbl
+        }, {
+           donut: true,
+           donutWidth: 20,
+           donutSolid: true,
+           showLabel: true
+          });
+    }
+
+    function BarChart2(divId, lbl, srs, axX, axY) {
+        new Chartist.Bar(divId, {
+          labels: lbl,
+          series: srs
+        }, {
+           axisX: { position: 'start', offset: axX },
+           axisY: { position: 'end', offset: axY }
+          });
+    }
+
+    BarChart1('.ct-chart4',
+              [2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017],
+              [893, 967, 971, 776, 869, 806, 850, 815, 878, 897, 578],
+              30, 70
+    )
+
+    PieChart('.ct-chart5', [7206, 2094], ["Day- 7206", "Night- 2094"])
+
+    BarChart2('.ct-chart6',
+              ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+              [[823, 1244, 1409, 1414, 1538, 1703, 1165]],
+              10, 35
+          )
 
     urlUtils.addProxyRule({
       urlPrefix: "route.arcgis.com",
@@ -133,21 +153,21 @@ require([
       map.on("mouse-drag", showCoordinates);
     });
 
-    $('#chooseAOI').on('click', function(){
+    $('#chooseAOI').on('click', function() {
       map.disableMapNavigation();
       initToolbar();
     });
-    
+
     function initToolbar() {
       tb = new Draw(map);
       tb.activate("extent");
       tb.on("draw-end", getExtent);
     }
 
-    function getExtent(evt){
+    function getExtent(evt) {
         console.log(evt);
         map.setExtent(evt.geometry);
-        tb.deactivate(); 
+        tb.deactivate();
         map.enableMapNavigation();
     }
 
@@ -157,7 +177,7 @@ require([
       dom.byId("Coord_info").innerHTML = mp.x.toFixed(3) + ", " + mp.y.toFixed(3);
     }
 
-    $('#NavButton').on('click', function(){
+    $('#NavButton').on('click', function() {
       var downtown = new Point(-66.647, 45.960, new SpatialReference({ wkid: 4326 }));
       map.centerAndZoom(downtown, 16);
     });
@@ -185,7 +205,7 @@ require([
     stopSymbol.setOutline(stopLineSymbol);
     stopSymbol.setPath("M16,3.5c-4.142,0-7.5,3.358-7.5,7.5c0,4.143,7.5,18.121,7.5,18.121S23.5,15.143,23.5,11C23.5,6.858,20.143,3.5,16,3.5z M16,14.584c-1.979,0-3.584-1.604-3.584-3.584S14.021,7.416,16,7.416S19.584,9.021,19.584,11S17.979,14.584,16,14.584z");
     stopSymbol.outline.setWidth(4);
- 
+
     routeSymbol = new SimpleLineSymbol().setColor(new dojo.Color([0, 0, 255, 0.5])).setWidth(5);
     //Adds a graphic when the user clicks the map. If 2 or more points exist, route is solved.
 
@@ -246,6 +266,7 @@ require([
         );
 
         dojo.forEach(bufferedGeometries, function (geometry) {
+
           var graphic = new esri.Graphic(geometry, symbol);
           var query = new Query();
           query.geometry = geometry;
@@ -290,7 +311,7 @@ require([
             dayOfWeek = {}
             sev = {}
             resFea = results.features;
-          
+
             for (i = 0; i < resFea.length; i++) {
               year[resFea[i].attributes.Year_] = 0;
               day_nig[resFea[i].attributes.Day_Night] = 0;
@@ -315,32 +336,9 @@ require([
             dayOfWeek["Thu"] = dayOfWeek["Thurs"];
             delete dayOfWeek["Thurs"];
 
-            new Chartist.Bar('.ct-chart1', {
-              labels: Object.keys(year),
-              series: Object.values(year)
-            }, {
-                distributeSeries: true,
-                axisY: { offset: 15 },
-                axisX: { offset: 27 },
-              });
-
-            new Chartist.Pie('.ct-chart2', {
-              series: Object.values(day_nig),
-              labels: ["Day- " + day_nig.D, "Night- " + day_nig.N]
-            }, {
-                donut: true,
-                donutWidth: 20,
-                donutSolid: true,
-                showLabel: true
-              });
-
-            new Chartist.Bar('.ct-chart3', {
-              labels: Object.keys(dayOfWeek),
-              series: [Object.values(dayOfWeek)]
-            }, {
-                axisX: { position: 'start', offset: 10 },
-                axisY: { position: 'end', offset: 40 }
-              });
+            BarChart1('.ct-chart1', Object.keys(year), Object.values(year), 15, 27)
+            PieChart('.ct-chart2', Object.values(day_nig), ["Day- " + day_nig.D, "Night- " + day_nig.N])
+            BarChart2('.ct-chart3', Object.keys(dayOfWeek), [Object.values(dayOfWeek)], 10, 40)
 
             $("#reason").html("");
             for (k in acc_type) {
