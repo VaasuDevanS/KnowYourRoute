@@ -1,0 +1,103 @@
+html, body { 
+  height: 100%; width: 100%;
+  margin: 0; padding: 0;
+} 
+
+body{
+  background-color:white; overflow:hidden; 
+  font-family: "Kimberley", sans-serif
+} 
+
+#header {
+ -moz-border-radius: 5px;
+  margin:2px;
+  padding-top: 4px;
+  background-color:#929761; 
+  color:#421b14; 
+  font-size:16pt; text-align:right;font-weight:bold;
+  border: solid 2px #79663b;
+  height:55px;
+}
+
+#subheader {
+  font-size:small;
+  color: #cfcfcf;
+  text-align:right;
+  padding-right:20px;
+}
+
+#HomeButton {
+    padding-left: 1px;
+    padding-right: 2px;
+    padding-top: 0px;
+    padding-bottom: 2px;
+    outline: none;
+    position: absolute;
+    z-index: 1;
+    right: 1%;
+    top: 2%;
+    border-radius: 20%;
+    background-color: aliceblue;
+    cursor: pointer;
+}
+
+#NavButton{
+  padding: 0px;
+  outline: none;
+  position: absolute;
+  z-index: 1;
+  right: 1%;
+  top: 10%;
+  border-radius: 20%;
+  background-color: aliceblue;
+  cursor: pointer;
+  background-image: url('../images/extent.png');
+  background-repeat: no-repeat;
+}
+
+#rightPane{
+  margin:5px;
+  padding:10px;
+  background-color:white;
+  color:#421b14;
+  border: solid 2px #79663b;
+  width:16.5%;
+  margin-right: 0.3%;
+}
+
+#leftPane{
+  margin:3px;
+  padding:5px;
+  width:18%;
+  color:rgb(117, 100, 89);
+  background-color:white;
+  border: solid 2px #79663b;
+}
+#map {
+  margin:5px;
+  border:solid 4px #79663b;
+}
+.shadow{
+  -o-border-radius: 6px;
+  -moz-border-radius: 6px;
+  -webkit-border-radius: 6px;
+  box-shadow: 8px 8px 16px #323834;
+  -webkit-box-shadow: 8px 8px 16px #323834;
+  -moz-box-shadow: 8px 8px 16px #323834;
+  -o-box-shadow: 8px 8px 16px #323834;
+}
+
+.nihilo .dijitAccordionText {
+  margin-left:4px;
+  margin-right:4px;
+  color:#5c8503;
+}
+
+.ct-label.ct-label.ct-horizontal.ct-end {
+  position: relative;
+  justify-content: flex-end;
+  text-align: right;
+  transform-origin: 100% 0;
+  transform: translate(-100%) rotate(-45deg);
+  white-space:nowrap;
+}

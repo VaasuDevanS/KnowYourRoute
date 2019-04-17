@@ -1,393 +1,126 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <meta name="viewport" content="initial-scale=1, maximum-scale=1,user-scalable=no">
-    <title> Know Your Route </title>
 
-    <link rel="stylesheet" href="https://js.arcgis.com/3.28/dijit/themes/claro/claro.css">
-    <link rel="stylesheet" href="https://js.arcgis.com/3.28/esri/css/esri.css">
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/chartist.js/latest/chartist.min.css">
-    <link rel="icon" href="https://www.van-tramp.com/wp/wp-content/uploads/2013/01/Safety-Icon.jpg">
-    
-    <style>
-    
-    #HomeButton {
-      top: 95px;
-      left: 20px;
-      z-index: 50;
-    }
-    
-    #BasemapToggle {
-      position: absolute;
-      top: 13%;
-      right: 15%;
-      z-index: 50;
-    }
-    
-    .ct-label.ct-label.ct-horizontal.ct-end {
-        position: relative;
-        justify-content: flex-end;
-        text-align: right;
-        transform-origin: 100% 0;
-        transform: translate(-100%) rotate(-45deg);
-        white-space:nowrap;
-      }}
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="initial-scale=1, maximum-scale=1,user-scalable=no">
+  <title> Know Your Route </title>
 
-    </style>
-    <script src="https://cdn.jsdelivr.net/chartist.js/latest/chartist.min.js"> </script>
-    <script src="https://js.arcgis.com/3.28/"> </script>
-    <script src="https://code.jquery.com/jquery-3.3.1.js"> </script>
-    <script>
-      dojo.require("esri.tasks.geometry");
-      dojo.require("esri/geometry/Polyline");
-      require([
-        "esri/urlUtils",
-        "esri/map",
-        "esri/graphic",
-        "esri/tasks/RouteTask",
-        "esri/tasks/RouteParameters",
+  <link rel="stylesheet" href="https://js.arcgis.com/3.28/dijit/themes/claro/claro.css">
+  <link rel="stylesheet" href="https://js.arcgis.com/3.28/dijit/themes/nihilo/nihilo.css">
+  <link rel="stylesheet" href="https://js.arcgis.com/3.28/esri/css/esri.css">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/chartist.js/latest/chartist.min.css">
+  <link rel="icon" href="https://www.van-tramp.com/wp/wp-content/uploads/2013/01/Safety-Icon.jpg">
+  <link rel="stylesheet" href="css/RouteSafety.css">
 
-        "esri/tasks/FeatureSet",
-        "esri/symbols/SimpleMarkerSymbol",
-        "esri/symbols/SimpleLineSymbol",
+  <script> var dojoConfig = { parseOnLoad: true }; </script>
+  <script src="https://cdn.jsdelivr.net/chartist.js/latest/chartist.min.js"> </script>
+  <script src="https://js.arcgis.com/3.28/"> </script>
+  <script src="https://code.jquery.com/jquery-3.3.1.js"> </script>
+  <script src="js/RouteSafety.js"> </script>
+</head>
 
-        "esri/Color",
-        "dojo/on",
-        // "esri/dijit/HomeButton",
-        "dojo/dom",
-        "esri/tasks/locator",
-        "esri/geometry/webMercatorUtils",
-        "esri/dijit/BasemapToggle",
-        
-        "esri/layers/FeatureLayer",
-        "dijit/registry",
-        "esri/tasks/query",
-        "esri/renderers/SimpleRenderer",
-        "esri/symbols/Symbol",
-        "esri/symbols/SimpleFillSymbol",
-        
-        "dojo/domReady!",
-        "dijit/layout/BorderContainer",
-        "dijit/layout/ContentPane",
-        "dijit/form/HorizontalSlider",
-        "dijit/form/HorizontalRuleLabels",
-        
-        // "dojox/charting/themes/"
-      ], function (
-        urlUtils, Map, Graphic, RouteTask, RouteParameters,
-        FeatureSet, SimpleMarkerSymbol, SimpleLineSymbol,
-        //HomeButton
-        Color, on, dom, Locator, webMercatorUtils, BasemapToggle, FeatureLayer,
-        registry, Query
-      ) {
-        var map, locator, routeTask, routeParams, home;
-        var stopSymbol, routeSymbol, lastStop;
-        routes = [];
-        var stops = 1;
-        stopLocs = [];
-
-        urlUtils.addProxyRule({
-          urlPrefix: "route.arcgis.com",
-          proxyUrl: "/sproxy/"
-       });
-        
-        map = new Map("map", {
-            basemap : "satellite",
-            center : [-66.640, 45.968],
-            zoom : 14
-        });
-        
-        var toggle = new BasemapToggle({
-            map: map,
-            basemap: "streets"
-         }, "BasemapToggle");
-        toggle.startup();
-        
-        var accidents = new FeatureLayer("https://services1.arcgis.com/56dETZIzFXStwLka/arcgis/rest/services/Traffic_Accidents_102100/FeatureServer/0");
-        var wards = new FeatureLayer("https://services1.arcgis.com/56dETZIzFXStwLka/arcgis/rest/services/Wards_2016/FeatureServer/0");
-        var outline = new FeatureLayer("https://services1.arcgis.com/56dETZIzFXStwLka/arcgis/rest/services/City_Boundary/FeatureServer/0");
-        map.addLayers([outline]);
-        
-        esri.config.defaults.io.proxyUrl = "/proxy/";
-        esri.config.defaults.io.alwaysUseProxy = false;
-        gsvc = new esri.tasks.GeometryService("https://utility.arcgisonline.com/ArcGIS/rest/services/Geometry/GeometryServer")
-        var queryTask = new esri.tasks.QueryTask("https://services1.arcgis.com/56dETZIzFXStwLka/arcgis/rest/services/Traffic_Accidents_102100/FeatureServer/0")
-        
-        // var home = new HomeButton({
-        //    map: map
-        //  }, "HomeButton");
-        
-        map.on("click", addStop);
-        on(dom.byId("clearAll"), "click", clearAll);
-
-        routeTask = new RouteTask("https://utility.arcgis.com/usrsvcs/appservices/UrSqiPqnCnAKPZTb/rest/services/World/Route/NAServer/Route_World");
-        locator = new Locator("https://utility.arcgis.com/usrsvcs/appservices/Ooyp9uhT7sTs88uJ/rest/services/World/GeocodeServer/reverseGeocode");
-        
-        //setup the route parameters
-        routeParams = new RouteParameters();
-        routeParams.stops = new FeatureSet();
-        routeParams.returnDirections = true;
-        routeParams.returnStops = true;
-        routeParams.outSpatialReference = { "wkid" : 102100 };
-
-        routeTask.on("solve-complete", showRoute);
-
-        // Define the symbology used to display the route and stops
-        stopSymbol = new SimpleMarkerSymbol().setStyle(SimpleMarkerSymbol.STYLE_CROSS).setSize(15);
-        stopSymbol.outline.setWidth(4);
-        // var stopSymbol = new Symbol.PictureMarkerSymbol({"angle":0,"xoffset":0,"yoffset":12,"type":"esriPMS","url":"http://static.arcgis.com/images/Symbols/Basic/RedStickpin.png","contentType":"image/png","width":24,"height":24});
-        routeSymbol = new SimpleLineSymbol().setColor(new dojo.Color([0, 0, 255, 0.5])).setWidth(5);
-
-        //Adds a graphic when the user clicks the map. If 2 or more points exist, route is solved.
-        function addStop(evt) {
-          var stop = map.graphics.add(new Graphic(evt.mapPoint, stopSymbol));
-          routeParams.stops.features.push(stop);
-          locator.locationToAddress(webMercatorUtils.webMercatorToGeographic(evt.mapPoint), 100);
-          locator.on("location-to-address-complete", function(evt) {
-               name = evt.address.address.Address;
-               loc = evt.address.location.x + "," + evt.address.location.y;
-               if (name == ''){
-                  name = "Geocoding error";
-               }
-               if (!stopLocs.includes(loc)){
-                  $("#stops").append("Location" + stops + ": " + name + "<br>");
-                  stops += 1;
-                  stopLocs.push(loc);
-               }
-          });
-          if (routeParams.stops.features.length >= 2) {
-            routeTask.solve(routeParams);
-            // lastStop = routeParams.stops.features.splice(0, 1)[0];
-          }
-        }
-
-        // Adds the solved route to the map as a graphic and do the processing too
-        function showRoute(evt) {
-           for(var i=0; i<routes.length; i++){
-             map.graphics.remove(routes[i]);
-          }
-          dirs = evt.result.routeResults[0].directions.features;
-          $('#directions').html("<b>Directions:</b><br>")
-          for (var i=0; i<dirs.length; i++){
-             $('#directions').append((i+1) + ".) " + dirs[i].attributes.text + "<br>")
-          }
-          $("#info").html(
-             "Length: " + evt.result.routeResults[0].route.attributes.Total_Kilometers.toFixed(3) +
-             " kms<br>Travel time: " + evt.result.routeResults[0].route.attributes.Total_TravelTime.toFixed(3) +
-             " mins"
-          )
-          routes.push( map.graphics.add(evt.result.routeResults[0].route.setInfoTemplate(esri.InfoTemplate("Route", "No. of stops: ${StopCount}")).setSymbol(routeSymbol)) );
-          // console.log(evt.result.routeResults[0].route.geometry.paths[0])
-          
-          var params = new esri.tasks.BufferParameters();
-          params.geometries = [ evt.result.routeResults[0].route.geometry ];
-          params.distances = [20];
-          params.unit = esri.tasks.GeometryService.UNIT_METER;
-          params.outSpatialReference = map.spatialReference;
-          gsvc.buffer(params, showBuffer);
-          function showBuffer(bufferedGeometries) {
-          var symbol = new esri.symbol.SimpleFillSymbol(
-               esri.symbol.SimpleFillSymbol.STYLE_SOLID,
-               new SimpleLineSymbol(
-                 SimpleLineSymbol.STYLE_SOLID,
-                 new Color([255,0,0,0.65]), 2
-               ),
-               new Color([255,0,0,0.35])
-             );
-           dojo.forEach(bufferedGeometries, function(geometry) {
-              var graphic = new esri.Graphic(geometry,symbol);
-              // map.graphics.add(graphic);
-              var query = new Query();
-              query.geometry = geometry;
-              query.returnGeometry = true;
-              query.spatialRelationship = esri.tasks.Query.SPATIAL_REL_CONTAINS;
-              query.outFields = ["*"];
-              queryTask.execute(query, showAccidents);
-              function showAccidents(results){
-                   dojo.forEach(results.features, function(f) {
-                      info = new esri.InfoTemplate("Severity Level: ${Severity}", 
-                                                   "Took place on: ${Year_}/${Month_}/${Day_} <br />"+
-                                                   "Type: ${Type}<br />" + 
-                                                   "Injured: ${NoInjured}<br />"+
-                                                   "Killed: ${NoKilled}<br />"+
-                                                   "Day or Night: ${Day_Night}<br />"+
-                                                   "${At_Near} ${Street}"
-                                                );
-                      switch(f.attributes.Severity) {
-                       case 1: highlightSymbol= new esri.symbol.SimpleMarkerSymbol().setColor(new dojo.Color([0,255,0])).setSize(10); break; //green
-                       case 2: highlightSymbol= new esri.symbol.SimpleMarkerSymbol().setColor(new dojo.Color([0,0,255])).setSize(10); break; //blue
-                       case 3: highlightSymbol= new esri.symbol.SimpleMarkerSymbol().setColor(new dojo.Color([255,0,0])).setSize(5); break; //red
-                    }
-                    f.setInfoTemplate(info);
-                    dojo.connect(map.graphics, "onMouseMove", function(evt) {
-                         var g = evt.graphic;
-                         map.infoWindow.setContent(g.getContent());
-                         map.infoWindow.setTitle(g.getTitle());
-                         map.infoWindow.show(evt.screenPoint,map.getInfoWindowAnchor(evt.screenPoint));
-                       });
-                    dojo.connect( map.graphics, "onMouseOut", function() {map.infoWindow.hide();} );
-                    map.graphics.add(f.setSymbol(highlightSymbol));
-                   });
-                   
-                   year = {}
-                   day_nig = {}
-                   acc_type = {}
-                   dayOfWeek = {}
-                   sev = {}
-                   resFea = results.features;
-                   // console.log(resFea) // Uncomment this to see the attributes
-                   // Initialize
-                   for(i=0; i<resFea.length; i++){
-                      year[resFea[i].attributes.Year_] = 0;
-                      day_nig[resFea[i].attributes.Day_Night] = 0;
-                      acc_type[resFea[i].attributes.Type] = 0;
-                      dayOfWeek[resFea[i].attributes.DayOfWeek] = 0;
-                      sev[resFea[i].attributes.Severity] = 0;
-                   }
-                   
-                   sev[3] = 0;
-                   for(i=0; i<resFea.length; i++){
-                      year[resFea[i].attributes.Year_] += 1;
-                      day_nig[resFea[i].attributes.Day_Night] += 1;
-                      acc_type[resFea[i].attributes.Type] += 1;
-                      dayOfWeek[resFea[i].attributes.DayOfWeek] += 1;
-                      sev[resFea[i].attributes.Severity] += 1;
-                   }
-                   
-                   $("#statistics").html("<b>No. of Accidents:</b> " + results.features.length + 
-                                         "<br><b>Severity-Levels</b> (high is deadly)<br>  1: " + sev[1] + "   |    2: " + sev[2] + "   |    3: " + sev[3]
-                   );
-
-                   delete dayOfWeek[" "];
-                   dayOfWeek["Thu"] = dayOfWeek["Thurs"];
-                   delete dayOfWeek["Thurs"];
-                   
-                   new Chartist.Bar('.ct-chart1', {
-                       labels: Object.keys(year),
-                       series: Object.values(year)
-                     }, {
-                       distributeSeries: true,
-                       axisY: { offset: 15 },
-                       axisX: { offset: 27 },
-                   });
-                   
-                   new Chartist.Pie('.ct-chart2', {
-                       series: Object.values(day_nig),
-                       labels: ["Day- "+day_nig.D, "Night- "+day_nig.N]
-                     }, {
-                       donut: true,
-                       donutWidth: 20,
-                       donutSolid: true,
-                       showLabel: true
-                   });
-                   
-                   
-                   new Chartist.Bar('.ct-chart3', {
-                       labels: Object.keys(dayOfWeek),
-                       series: [ Object.values(dayOfWeek) ]
-                     }, {
-                       axisX: { position: 'start', offset: 10 },
-                       axisY: { position: 'end', offset: 40 }
-                     });
-                   $("#reason").html("");
-                   for (k in acc_type){
-                      $("#reason").append(k + ": <b>" + acc_type[k] + "</b><br>")
-                   }
-                   
-                   
-                }
-              });
-            }
-          }
-        
-        // Clears the Stops and Routes
-        function clearAll(){
-          map.graphics.clear();
-          /* 
-          for(var i=0; i<routes.length; i++){
-             map.graphics.remove(routes[i]);
-          }
-          for (var i=0; i<routeParams.stops.features.length; i++) {
-            map.graphics.remove(routeParams.stops.features[i]);
-         } */
-          stops = 1;
-          routes = [];
-          stopLocs = [];
-          routeParams.stops.features = [];
-          $("#stops").html("<b>Stops:</b><br>");
-          $("#info").html("<b>Info:</b>");
-          $("#directions").html("<b>Directions:</b>");
-          $("#statistics").html("<b> Statistics: </b>")
-          $("#accidents").html('<div class="ct-chart1 ct-golden-section"></div><br>');
-          $("#daynight").html('<div class="ct-chart2 ct-golden-section"></div><br>');
-          $("#day").html('<div class="ct-chart3 ct-golden-section"></div><br>');
-          $("#reason").html("");
-        }
-        
-       });
-    </script>
-
-  </head>
-  <body class="claro">
-     <div class="header">
-        <img src="http://www2.unb.ca/~voyer/assets/images/logolg.jpg" style="width:10%">
-        <img src="http://www2.unb.ca/gge/Graphics/GGE_Crest.gif" style="float:right; width:5.8%; padding-right:1%">
-        <center> <h1 style="padding-left:12%; margin-top:-4%"> Fredericton: Know Your Route </h1> </center>
-     </div> <br>
-     <div class="main-body">
-        
-        <div class="left" style="float:left; width:17%; margin-left:0.5%;">
-          <div style="padding-left:2%; padding-top:2%; height:68vh; border: 1px solid black; overflow-y: scroll">
-             <button id="clearAll"> clear all </button> <br><br>
-             <div id="stops">
-                <b>Stops:</b><br>
-             </div> <br>
-             
-             <div id="info">
-                <b>Info:</b> 
-             </div> <br>
-             
-             <div id="directions">
-                <b>Directions:</b>
-             </div>
+<body class="nihilo">
+  <div id="mainWindow" data-dojo-type="dijit.layout.BorderContainer" data-dojo-props="design:'headline', gutters:false"
+    style="width:100%; height:100%;">
+    <div id="header" data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'top'">
+        <img src="http://www2.unb.ca/~voyer/assets/images/logolg.jpg" style="width: 10%;height: 100%;float: left;">
+        <img src="http://www2.unb.ca/gge/Graphics/GGE_Crest.gif" style="float:right; width:4%;height: 100%; padding-right:1%">
+        <center> Fredericton: Know Your Route </center>
+      <!-- <div id="subheader"><center>Be safe while you travel</center></div> -->
+    </div>
+    <div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'left'" id="leftPane">
+      <div data-dojo-type="dijit.layout.AccordionContainer">
+        <div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="title:'Know Your Route Safety'">
+            <center><button id="clearAll" style="padding:2px 2px 2px 2px;" class="btn btn-outline-danger"> Clear Results </button></center> <br>
+          <div id="stops">
+            <b>Stops:</b><br>
           </div> <br>
-       
-          <div style="padding-left:2%;border: 1px solid black;">
-             <div>
-                <h6> About: </h6>
-                Developer: <a href="https://vaasudevans.github.io/" target="_blank">Vaasudevan Srinivasan</a><br>
-                Department: <a href="https://www.unb.ca/fredericton/engineering/depts/gge/index.html" target="_blank">MEngg. GGE</a><br>
-                Using: <a href="https://developers.arcgis.com/javascript/3/" target="_blank">ESRI JS 3.28</a> from April 1 to 3, 2019 <br><br>
-                
-                <h6> Layers from <a href="http://www.fredericton.ca/en/smart-city/open-data" target="_blank">Fredericton Open Data</a> </h6>
-                * <a href="http://data-fredericton.opendata.arcgis.com/datasets/traffic-accidents-accidents-de-la-circulation" target="_blank">
-                   Accidents (2007-2018)</a>
-                * <a href="http://data-fredericton.opendata.arcgis.com/datasets/crime-by-neighbourhood-2017-crime-par-quartier-2017?page=20" target="_blank">
-                   Crime (2017)</a>
-             </div>
-          </div>
-        </div>
-        
-        <div class="right" style="float:left; padding-left:10px; width:69%">
-          <div id="map" style="height:90vh; border:1px solid #000;">
-             <div id="HomeButton"></div>
-             <div id="BasemapToggle"></div>
-          </div>
-        </div>
-        
-        <div class="right-info" style="float:right; border: 1px solid black; width:12.4%; margin-right:0.5%">
-           <div style="padding-left:2%;">
-              <div id="statistics"> <b> Statistics: </b> </div> <br>
-              <b> Accidents by Year <br> <div id="accidents"> <div class="ct-chart1 ct-golden-section"> </div> <br> </div>
-              Time took place <br> <div id="daynight"> <div class="ct-chart2 ct-golden-section"></div> <br> </div>
-              Day took place  <br> <div id="day"> <div class="ct-chart3 ct-golden-section"></div> <br> </div>
-              Reason </b> <br> <div id="reason" style="width:95%;height:15vh; overflow-y: scroll"> </div>
-          </div>
-        </div>
-        
-     </div>
 
-  </body>
+          <div id="info">
+            <b>Info:</b>
+          </div> <br>
+
+          <div id="directions">
+            <b>Directions:</b>
+          </div>
+        </div>
+        <div style="width:95%" data-dojo-type="dijit.layout.ContentPane" data-dojo-props="title:'Statistics for Fredericton'">
+            <center><div id="statisticInfo">
+               <b>No. of Accidents:</b> 9300 <br>
+               <b> Accidents by Year <br>
+                   <div class="ct-chart4 ct-golden-section"> </div>
+                 Time took place <br>
+                   <div style="width:70%;"> <div class="ct-chart5 ct-golden-section"></div> </div> <br>
+                 Day took place <br>
+                  <div class="ct-chart6 ct-golden-section"></div>
+            </div></center>
+          </div>
+        <div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="title:'Basemap Gallery'">
+          <div id="basemapGallery"></div>
+        </div>
+        <div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="title:'How to Use?'">
+            <center><div id="usageInstruction">
+               <video width="300" height="240" controls>
+                   <source src="images/SampleVideo_1280x720_5mb.mp4" type="video/mp4">
+                   Your browser does not support the video tag.
+               </video>
+               <div style="text-align:left; padding-left:5px">Hello</div>
+            </div></center>
+          </div>
+        <div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="title:'About'">
+          <!-- <h6> About: </h6> -->
+          <b>Developer: </b><a href="https://vaasudevans.github.io/" target="_blank">Vaasudevan Srinivasan</a><br>
+          <b>Department:</b> <a href="https://www.unb.ca/fredericton/engineering/depts/gge/index.html"
+            target="_blank">MEngg. GGE</a><br>
+          <b>Using: </b><a href="https://developers.arcgis.com/javascript/3/" target="_blank">ESRI JS 3.28</a>,
+          April 2019 <br><br>
+
+          <h6><b> Layers from </b><a href="http://www.fredericton.ca/en/smart-city/open-data"
+              target="_blank">Fredericton Open Data</a> </h6>
+            * <a
+              href="http://data-fredericton.opendata.arcgis.com/datasets/traffic-accidents-accidents-de-la-circulation"
+              target="_blank">
+              Accidents (2007-2018)</a><br>
+        </div>
+      </div>
+    </div>
+    <div id="map" class="shadow" data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'center'">
+      <span id="Coord_info" style="position:absolute; left:15px; bottom:5px; color:#000; z-index:50;background: rgba(255,255,255,0.7);"></span>
+      <div id="HomeButton"></div>
+      <!-- <div id="NavButton"> -->
+          <button id="NavButton" title="Downtown">
+              <img id="downAreaImg" src="images/extent.png"
+                style="height: 30px; width:30px; background-color: transparent;">
+            </button>
+      <!-- </div> -->
+
+    </div>
+    <div data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'right'" id="rightPane">
+        <div id="statsDiv" style="display:block">
+           <center><h6>Add points on map to view statistics</h6></center>
+        </div>
+      <div id="statsResultDiv"  style="display:none">
+        <center><button id="chooseAOI" style="padding:2px 2px 2px 2px;" class="btn btn-outline-success">Choose AOI</button></center> <br>
+        <div id="statistics"> <b> Statistics: </b> </div> <br>
+        <b> Accidents by Year <br>
+          <div id="accidents">
+            <div class="ct-chart1 ct-golden-section"> </div> <br>
+          </div>
+          Time took place <br>
+          <div id="daynight">
+            <div class="ct-chart2 ct-golden-section"></div> <br>
+          </div>
+          Day took place <br>
+          <div id="day">
+            <div class="ct-chart3 ct-golden-section"></div> <br>
+          </div>
+          Reason
+        </b> <br>
+        <div id="reason"> </div>
+      </div>
+    </div>
+  </div>
+</body>
 </html>
