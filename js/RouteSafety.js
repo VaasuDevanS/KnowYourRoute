@@ -122,7 +122,7 @@ require([
     });
 
     map = new Map("map", {
-      basemap: "satellite",
+      basemap: "hybrid",
       center: [-66.52, 45.9999],
       zoom: 12
     });
@@ -158,6 +158,10 @@ require([
       initToolbar();
     });
 
+    $('#ClearAOI').on('click', function() {
+      showStatistics()
+    });
+
     routeResults = [];
 
     function initToolbar() {
@@ -167,11 +171,55 @@ require([
     }
 
     function getExtent(evt) {
-        console.log(evt);
-        console.log(routeResults)
-        map.setExtent(evt.geometry);
-        tb.deactivate();
-        map.enableMapNavigation();
+
+        var query = new Query();
+        query.geometry = evt.geometry;
+        query.returnGeometry = false;
+        query.spatialRelationship = esri.tasks.Query.SPATIAL_REL_CONTAINS;
+        query.outFields = ["*"];
+        queryTask.execute(query, updateStat);
+
+        function updateStat(results) {
+
+          year = {}; day_nig = {}; acc_type = {}; dayOfWeek = {}; sev = {};
+          resFea = results.features;
+          AOIresults = []
+
+          for (i = 0; i < resFea.length; i++) {
+            year[resFea[i].attributes.Year_] = 0;
+            day_nig[resFea[i].attributes.Day_Night] = 0;
+            acc_type[resFea[i].attributes.Type] = 0;
+            dayOfWeek[resFea[i].attributes.DayOfWeek] = 0;
+            sev[resFea[i].attributes.Severity] = 0;
+          }
+
+          sev[1] = 0; sev[2] = 0; sev[3] = 0;
+          for (i = 0; i < resFea.length; i++) {
+            year[resFea[i].attributes.Year_] += 1;
+            day_nig[resFea[i].attributes.Day_Night] += 1;
+            acc_type[resFea[i].attributes.Type] += 1;
+            dayOfWeek[resFea[i].attributes.DayOfWeek] += 1;
+            sev[resFea[i].attributes.Severity] += 1;
+          }
+
+          delete dayOfWeek[" "];
+          dKeys = ["Sun", "Mon", "Tue", "Wed", "Thurs", "Fri", "Sat"];
+          dValues = []
+          for(var i in dKeys){
+              dValues.push(dayOfWeek[dKeys[i]])
+          }
+
+          AOIresults.push([results.features.length, sev[1], sev[2], sev[3]]);
+          AOIresults.push([Object.keys(year), Object.values(year)]);
+          AOIresults.push([Object.values(day_nig), ["Day- " + day_nig.D, "Night- " + day_nig.N]])
+          AOIresults.push([dKeys, [dValues]])
+          AOIresults.push([acc_type])
+          showStatistics(AOIresults);
+
+          map.setExtent(evt.geometry);
+          tb.deactivate();
+          map.enableMapNavigation();
+        }
     }
 
     function showCoordinates(evt) {
@@ -308,11 +356,7 @@ require([
               map.graphics.add(f.setSymbol(highlightSymbol));
             });
 
-            year = {}
-            day_nig = {}
-            acc_type = {}
-            dayOfWeek = {}
-            sev = {}
+            year = {}; day_nig = {}; acc_type = {}; dayOfWeek = {}; sev = {};
             resFea = results.features;
 
             for (i = 0; i < resFea.length; i++) {
@@ -352,9 +396,7 @@ require([
       }
     }
 
-    function showStatistics() {
-
-        R = routeResults;
+    function showStatistics(R=routeResults) {
 
         $("#statistics").html("<b>No. of Accidents:</b> " + R[0][0] +
           "<br><b>Severity-Levels</b> (high is deadly)<br>  1: " + R[0][1] + "   |    2: " + R[0][2] + "   |    3: " + R[0][3]
@@ -388,5 +430,4 @@ require([
       $("#day").html('<div class="ct-chart3 ct-golden-section"></div><br>');
       $("#reason").html("");
     }
-
   });
