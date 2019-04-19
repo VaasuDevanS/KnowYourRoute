@@ -181,25 +181,30 @@ require([
 
         function updateStat(results) {
 
-          year = {}; day_nig = {}; acc_type = {}; dayOfWeek = {}; sev = {};
+          year = {}; day_nig = {}; acc_type = {}; dayOfWeek = {}; sev = {1:0, 2:0, 3:0};
           resFea = results.features;
           AOIresults = []
 
           for (i = 0; i < resFea.length; i++) {
             year[resFea[i].attributes.Year_] = 0;
             day_nig[resFea[i].attributes.Day_Night] = 0;
-            acc_type[resFea[i].attributes.Type] = 0;
+            acc_type[resFea[i].attributes.Type] = [0, 0, 0];
             dayOfWeek[resFea[i].attributes.DayOfWeek] = 0;
             sev[resFea[i].attributes.Severity] = 0;
           }
 
-          sev[1] = 0; sev[2] = 0; sev[3] = 0;
           for (i = 0; i < resFea.length; i++) {
             year[resFea[i].attributes.Year_] += 1;
             day_nig[resFea[i].attributes.Day_Night] += 1;
-            acc_type[resFea[i].attributes.Type] += 1;
             dayOfWeek[resFea[i].attributes.DayOfWeek] += 1;
             sev[resFea[i].attributes.Severity] += 1;
+            mon = resFea[i].attributes.Month_
+            if (mon>=1 && mon<=4)
+              acc_type[resFea[i].attributes.Type][0] += 1;
+            else if (mon>=5 && mon<=8)
+              acc_type[resFea[i].attributes.Type][1] += 1
+            else
+              acc_type[resFea[i].attributes.Type][2] += 1;
           }
 
           delete dayOfWeek[" "];
@@ -356,24 +361,29 @@ require([
               map.graphics.add(f.setSymbol(highlightSymbol));
             });
 
-            year = {}; day_nig = {}; acc_type = {}; dayOfWeek = {}; sev = {};
+            year = {}; day_nig = {}; acc_type = {}; dayOfWeek = {}; sev = {3:0};
             resFea = results.features;
 
             for (i = 0; i < resFea.length; i++) {
               year[resFea[i].attributes.Year_] = 0;
               day_nig[resFea[i].attributes.Day_Night] = 0;
-              acc_type[resFea[i].attributes.Type] = 0;
+              acc_type[resFea[i].attributes.Type] = [0, 0, 0];
               dayOfWeek[resFea[i].attributes.DayOfWeek] = 0;
               sev[resFea[i].attributes.Severity] = 0;
             }
 
-            sev[3] = 0;
             for (i = 0; i < resFea.length; i++) {
               year[resFea[i].attributes.Year_] += 1;
               day_nig[resFea[i].attributes.Day_Night] += 1;
-              acc_type[resFea[i].attributes.Type] += 1;
               dayOfWeek[resFea[i].attributes.DayOfWeek] += 1;
               sev[resFea[i].attributes.Severity] += 1;
+              mon = resFea[i].attributes.Month_
+              if (mon>=1 && mon<=4)
+                acc_type[resFea[i].attributes.Type][0] += 1;
+              else if (mon>=5 && mon<=8)
+                acc_type[resFea[i].attributes.Type][1] += 1
+              else
+                acc_type[resFea[i].attributes.Type][2] += 1;
             }
 
             delete dayOfWeek[" "];
@@ -408,7 +418,7 @@ require([
 
         $("#reason").html("");
         for (k in R[4][0]) {
-          $("#reason").append(k + ": <b>" + R[4][0][k] + "</b><br>")
+          $("#reason").append(k + ": (" + R[4][0][k][0] + ", " + R[4][0][k][1] + ", " + R[4][0][k][2] + ")<br>")
         }
     }
 
